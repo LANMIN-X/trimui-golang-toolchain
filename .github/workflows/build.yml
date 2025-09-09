@@ -1,50 +1,42 @@
-name: Build Toolchain
+name: Build Toolchain Project
 
 on:
-  workflow_dispatch: # 手动触发
-  push:
-    分支:
-      - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 检出代码
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. 设置 Docker
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
-      # 3. 构建 Docker 镜像
-      - name: Build Docker image
-        run: docker build -t toolchain .
+      - name: Build toolchain image
+        run: docker build -t trimui-smart-pro-toolchain .
 
-      # 4. 在容器中构建
-      - name: Build inside container
+      - name: Build your project inside container
         run: |
           mkdir -p workspace
           docker run --rm \
             -u toolchain \
             -v ${{ github.workspace }}/workspace:/home/toolchain/workspace \
-            toolchain \
+            trimui-smart-pro-toolchain \
             bash -c "
-              cd /home/toolchain/workspace && \
-              echo '开始构建项目...' && \
-              make build || echo '请根据需要修改构建命令'
+              cd /home/toolchain/workspace/your_project && \
+              echo '开始编译...' && \
+              make || echo '⚠️ 请根据项目修改构建命令'
             "
 
-      # 5. 检查 workspace 内容
-      - name: Check workspace files
-        run: ls -R workspace || echo "workspace is empty"
+      - name: List built binaries
+        run: |
+          echo "=== 编译产物 ==="
+          find workspace -type f -executable || echo "❌ 没有找到二进制文件"
 
-      # 6. 上传产物
-      - name: Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
+          name: trimui-binaries
           path: workspace
-          compression-level: 6
