@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. 安装 Docker
+      # 2. 设置 Docker
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
@@ -23,19 +23,26 @@ jobs:
       - name: Build Docker image
         run: docker build -t toolchain .
 
-      # 4. 构建工具链
-      - name: Build toolchain
-        run: make shell || true
-
-      # 5. 在容器中编译源码
-      - name: Build inside container
+      # 4. 在容器中执行构建
+      #    workspace 映射到 /root/workspace
+      - name: Build project inside container
         run: |
+          mkdir -p workspace
           docker run --rm \
             -v ${{ github.workspace }}/workspace:/root/workspace \
             toolchain \
-            bash -c "cd /root/workspace && make build || echo '请在这里修改为正确的构建命令'"
+            bash -c "
+              cd /root/workspace && \
+              echo '开始构建项目...' && \
+              # 如果项目有源码，这里执行编译命令
+              make build || echo '请根据需要修改构建命令'
+            "
 
-      # 6. 上传产物（修复新版 v4）
+      # 5. 检查 workspace 目录内容
+      - name: Check workspace
+        run: ls -R workspace || echo "workspace is empty"
+
+      # 6. 上传产物
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
