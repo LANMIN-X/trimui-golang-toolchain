@@ -21,28 +21,26 @@ jobs:
 
       # 3. 构建 Docker 镜像
       - name: Build Docker image
-        run: docker build -t toolchain .
+        run: docker build -t trimui-toolchain .
 
       # 4. 在容器中执行构建
-      #    workspace 映射到 /root/workspace
-      - name: Build project inside container
+      - name: Build inside container
         run: |
           mkdir -p workspace
           docker run --rm \
-            -v ${{ github.workspace }}/workspace:/root/workspace \
-            toolchain \
+            -v ${{ github.workspace }}/workspace:/home/toolchain/workspace \
+            trimui-toolchain \
             bash -c "
-              cd /root/workspace && \
+              cd /home/toolchain/workspace && \
               echo '开始构建项目...' && \
-              # 如果项目有源码，这里执行编译命令
-              make build || echo '请根据需要修改构建命令'
+              make build || echo '请在这里修改为正确的构建命令'
             "
 
-      # 5. 检查 workspace 目录内容
-      - name: Check workspace
+      # 5. 检查 workspace 内容
+      - name: Check workspace files
         run: ls -R workspace || echo "workspace is empty"
 
-      # 6. 上传产物
+      # 6. 上传编译产物
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
